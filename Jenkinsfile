@@ -44,23 +44,24 @@ pipeline {
     stage('Find Changed JS/TS Files') {
         steps {
             script {
-                bat 'git status'
-                def changed = bat(
-                    script: "git diff --name-only ${env.BASE_COMMIT}..HEAD -- \"*.js\" \"*.ts\"",
-                    returnStdout: true
-                ).trim()
+                bat """
+                    echo BASE_COMMIT: ${env.BASE_COMMIT}
+                    git diff --name-only ${env.BASE_COMMIT} HEAD -- \"*.js\" \"*.ts\" > changed.txt
+                """
 
+                def changed = readFile('changed.txt').trim()
                 if (!changed) {
-                    echo "✅ No JS/TS changes found since ${env.BASE_COMMIT}"
+                    echo "✅ No changed JS/TS files"
                     currentBuild.result = 'SUCCESS'
                     skipRemainingStages()
                 } else {
                     env.ESLINT_FILES = changed.replaceAll('\r\n', ' ').replaceAll('\n', ' ')
-                    echo "🎯 Linting changed files:\n${env.ESLINT_FILES}"
+                    echo "🎯 Changed files: ${env.ESLINT_FILES}"
                 }
             }
         }
     }
+
 
 
     stage('Run ESLint') {
