@@ -42,25 +42,28 @@ pipeline {
     }
 
     stage('Find Changed JS/TS Files') {
-        steps {
-            script {
-                bat """
-                    echo BASE_COMMIT: ${env.BASE_COMMIT}
-                    git diff --name-only ${env.BASE_COMMIT} HEAD -- \"*.js\" \"*.ts\" > changed.txt
-                """
+    steps {
+        script {
+            echo "📌 BASE_COMMIT: ${env.BASE_COMMIT}"
 
-                def changed = readFile('changed.txt').trim()
-                if (!changed) {
-                    echo "✅ No changed JS/TS files"
-                    currentBuild.result = 'SUCCESS'
-                    skipRemainingStages()
-                } else {
-                    env.ESLINT_FILES = changed.replaceAll('\r\n', ' ').replaceAll('\n', ' ')
-                    echo "🎯 Changed files: ${env.ESLINT_FILES}"
-                }
+            // Write the diff output to a file safely
+            bat """
+                git diff --name-only ${env.BASE_COMMIT} HEAD -- *.js *.ts > changed.txt
+            """
+
+            def changed = readFile('changed.txt').trim()
+            if (!changed) {
+                echo "✅ No changed JS/TS files"
+                currentBuild.result = 'SUCCESS'
+                skipRemainingStages()
+            } else {
+                env.ESLINT_FILES = changed.replaceAll('[\\r\\n]+', ' ')
+                echo "🎯 Changed files: ${env.ESLINT_FILES}"
             }
         }
     }
+}
+
 
 
 
